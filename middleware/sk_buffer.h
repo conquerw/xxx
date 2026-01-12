@@ -22,17 +22,35 @@ typedef struct
     char *data;
     char *tail;
     char *end;
-	struct list_head node;
-	char buffer[0];
+    struct list_head node;
+    char buffer[0];
 } sk_buffer_t;
+
+static inline void *posix_memalign2(size_t alignment, size_t size)
+{
+    void *p = NULL;
+
+    if(alignment < sizeof(void *))
+        alignment = sizeof(void *);
+
+    if((alignment & (alignment - 1)) != 0)
+        return NULL;
+
+    int ret = posix_memalign(&p, alignment, size);
+    if(ret != 0)
+        return NULL;
+
+    return p;
+}
 
 static inline sk_buffer_t *sk_buffer_create(int head_len, int len, int tail_len)
 {
     int len2 = head_len + len + tail_len;
     sk_buffer_t *sk_buffer = (sk_buffer_t *)calloc(1, sizeof(sk_buffer_t) + len2);
+    // sk_buffer_t *sk_buffer = (sk_buffer_t *)posix_memalign2(64, sizeof(sk_buffer_t) + len2);
     if(!sk_buffer)
         return NULL;
-
+        
     sk_buffer->head = sk_buffer->buffer;
     sk_buffer->end = sk_buffer->buffer + len2;
     sk_buffer->data = sk_buffer->buffer + head_len;

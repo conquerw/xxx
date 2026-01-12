@@ -5,7 +5,7 @@
 #include <string.h>
 #include <pthread.h>
 #include <sched.h>
-#include "murmur_hash3.h"
+#include "xxhash.h"
 #include "util.h"
 #include "sk_buffer.h"
 #include "event.h"
@@ -256,8 +256,7 @@ static void *event_thread2(void *para)
 
 		unsigned int hash = *(unsigned int *)sk_buffer->data;
 		sk_buffer_pull(sk_buffer, 4);
-		unsigned int hash2 = 0;
-		murmur_hash3_x86_32(sk_buffer->data, sk_buffer->tail - sk_buffer->data, 1, &hash2);
+		XXH32_hash_t hash2 = XXH32(sk_buffer->data, sk_buffer->tail - sk_buffer->data, 0);
 		if(hash != hash2)
 		{
 			printf("hash values are not equal, hash-hash2: %x-%x\n", hash, hash2);
@@ -309,7 +308,9 @@ int event_thread_start(event_thread_t *event_thread)
 	param.sched_priority = 80;
 	pthread_attr_setschedparam(&attr, &param);
 
-	pthread_create(&event_thread->pthread, &attr, event_thread2, event_thread);
+	int ret = pthread_create(&event_thread->pthread, &attr, event_thread2, event_thread);
+	if(ret != 0)
+		printf("pthread_create failed: %s\n", strerror(ret));
 	pthread_detach(event_thread->pthread);
 	sem_wait(&event_thread->port_sem);
 
@@ -343,8 +344,7 @@ int event_send(event_thread_t *event_thread, unsigned short dest, unsigned int e
 	sk_buffer_push_copy(sk_buffer, (char *)&event, 4);
 	sk_buffer_push_copy(sk_buffer, (char *)&dest, 2);
 	sk_buffer_push_copy(sk_buffer, (char *)&event_thread->id, 2);
-	unsigned int hash = 0;
-	murmur_hash3_x86_32(sk_buffer->data, sk_buffer->tail - sk_buffer->data, 1, &hash);
+	XXH32_hash_t hash = XXH32(sk_buffer->data, sk_buffer->tail - sk_buffer->data, 0);
 	sk_buffer_push_copy(sk_buffer, (char *)&hash, 4);
 
 	int ret = port_send(event_thread->port, dest, sk_buffer);
@@ -369,8 +369,7 @@ int event_broadcast(event_thread_t *event_thread, unsigned int event, char *buff
 	unsigned short dest = PORT_BROADCAST;
 	sk_buffer_push_copy(sk_buffer, (char *)&dest, 2);
 	sk_buffer_push_copy(sk_buffer, (char *)&event_thread->id, 2);
-	unsigned int hash = 0;
-	murmur_hash3_x86_32(sk_buffer->data, sk_buffer->tail - sk_buffer->data, 1, &hash);
+	XXH32_hash_t hash = XXH32(sk_buffer->data, sk_buffer->tail - sk_buffer->data, 0);
 	sk_buffer_push_copy(sk_buffer, (char *)&hash, 4);
 	
 	port_broadcast(event_thread->port, sk_buffer);

@@ -32,5 +32,8 @@ target_link_libraries(example_log common zlog)
 add_executable(example_murmur_hash3 util/example_murmur_hash3.c)
 target_link_libraries(example_murmur_hash3 common)
 
+add_executable(example_xxhash util/example_xxhash.c)
+target_link_libraries(example_xxhash common)
+
 add_executable(example_timer2 util/example_timer2.c)
 target_link_libraries(example_timer2 common)

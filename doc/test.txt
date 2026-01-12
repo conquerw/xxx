@@ -145,6 +145,20 @@ conquerw@conquerw:~/sources/xxx/build$ ./test/middleware/throughput/throughput_e
 500000, 1.64s, 1187.77MBits/s
 500000, 3.75s, 520.48MBits/s
 conquerw@conquerw:~/sources/xxx/build$ 
+root@conquerw:/home/conquerw/sources/xxx/build# ./test/middleware/throughput/throughput_event_send 
+64, 32000000
+500000, 1.34s, 22.80MBits/s
+500000, 1.79s, 17.07MBits/s
+256, 128000000
+500000, 1.31s, 93.25MBits/s
+500000, 5.25s, 23.27MBits/s
+1024, 512000000
+500000, 1.73s, 282.12MBits/s
+500000, 2.51s, 194.48MBits/s
+4096, 2048000000
+500000, 1.55s, 1262.01MBits/s
+500000, 4.45s, 438.95MBits/s
+root@conquerw:/home/conquerw/sources/xxx/build# 
 
 
 
@@ -180,4 +194,18 @@ root@f697af0f6b0a:/home/conquerw/sources/xxx/build# ./test/middleware/throughput
 4096, 2048000000
 500000, 1.38s, 1419.12MBits/s
 462292, 2.01s, 896.69MBits/s
+root@f697af0f6b0a:/home/conquerw/sources/xxx/build# 
+root@f697af0f6b0a:/home/conquerw/sources/xxx/build# ./test/middleware/throughput/throughput_event_send 
+64, 32000000
+500000, 2.80s, 10.90MBits/s
+902629, 102.79s, 17.47MBits/s
+256, 128000000
+500000, 2.79s, 43.69MBits/s
+457265, 2.79s, 39.99MBits/s
+1024, 512000000
+500000, 2.48s, 197.21MBits/s
+477836, 2.47s, 188.63MBits/s
+4096, 2048000000
+500000, 1.28s, 1521.28MBits/s
+452988, 1.28s, 1379.93MBits/s
 root@f697af0f6b0a:/home/conquerw/sources/xxx/build# 

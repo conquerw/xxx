@@ -5,7 +5,7 @@
 #include <string.h>
 #include <sched.h>
 #include "kernel.h"
-#include "murmur_hash3.h"
+#include "xxhash.h"
 #include "util.h"
 #include "sk_buffer.h"
 #include "gateway.h"
@@ -140,18 +140,18 @@ static void *port_thread(void *para)
 {
 	if(!para)
 		return NULL;
-	
+
 	gateway_t *gateway = (gateway_t *)para;
 	if(!gateway->port || !gateway->middleware_ops)
 		return NULL;
-	
+
 	pthread_setcancelstate(PTHREAD_CANCEL_ENABLE, NULL);
 	pthread_setcanceltype(PTHREAD_CANCEL_ASYNCHRONOUS, NULL);
-	
+
 	port_set_state(gateway->port, PORT_STATE_CONN);
 
 	sem_post(&gateway->port_sem);
-
+	
 	while(1)
 	{
 		sk_buffer_t *sk_buffer = port_recv(gateway->port);
@@ -160,8 +160,7 @@ static void *port_thread(void *para)
 
 		unsigned int hash = *(unsigned int *)sk_buffer->data;
 		sk_buffer_pull(sk_buffer, 4);
-		unsigned int hash2 = 0;
-		murmur_hash3_x86_32(sk_buffer->data, sk_buffer->tail - sk_buffer->data, 1, &hash2);
+		XXH32_hash_t hash2 = XXH32(sk_buffer->data, sk_buffer->tail - sk_buffer->data, 0);
 		if(hash != hash2)
 		{
 			printf("hash values are not equal, hash-hash2: %x-%x\n", hash, hash2);
@@ -216,8 +215,7 @@ static void *middleware_ops_thread(void *para)
 
 		unsigned int hash = *(unsigned int *)sk_buffer->data;
 		sk_buffer_pull(sk_buffer, 4);
-		unsigned int hash2 = 0;
-		murmur_hash3_x86_32(sk_buffer->data, sk_buffer->tail - sk_buffer->data, 1, &hash2);
+		XXH32_hash_t hash2 = XXH32(sk_buffer->data, sk_buffer->tail - sk_buffer->data, 0);
 		if(hash != hash2)
 		{
 			printf("hash values are not equal, hash-hash2: %x-%x\n", hash, hash2);
@@ -265,16 +263,20 @@ int gateway_start(gateway_t *gateway)
 	param.sched_priority = 80;
 	pthread_attr_setschedparam(&attr, &param);
 
-	pthread_create(&gateway->port_pthread, &attr, port_thread, gateway);
+	int ret = pthread_create(&gateway->port_pthread, &attr, port_thread, gateway);
+	if(ret != 0)
+		printf("pthread_create failed: %s\n", strerror(ret));
 	pthread_detach(gateway->port_pthread);
 	sem_wait(&gateway->port_sem);
 
-	pthread_create(&gateway->middleware_ops_pthread, &attr, middleware_ops_thread, gateway);
+	ret = pthread_create(&gateway->middleware_ops_pthread, &attr, middleware_ops_thread, gateway);
+	if(ret != 0)
+		printf("pthread_create failed: %s\n", strerror(ret));
 	pthread_detach(gateway->middleware_ops_pthread);
 	sem_wait(&gateway->middleware_ops_sem);
 
 	pthread_attr_destroy(&attr);
-	
+
 	if(gateway->middleware_ops->start)
 		gateway->middleware_ops->start(gateway->middleware_ops);
 

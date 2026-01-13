@@ -230,11 +230,15 @@ static void *middleware_ops_thread(void *para)
 		sk_buffer_push_copy(sk_buffer, (char *)&dest, 2);
 		sk_buffer_push_copy(sk_buffer, (char *)&source, 2);
 		sk_buffer_push_copy(sk_buffer, (char *)&hash, 4);
-		
+
 		if(dest == PORT_BROADCAST)
 		{
-			port_broadcast(gateway->port, sk_buffer);
-			sk_buffer_destroy(sk_buffer);
+			port_t *port = port_get_by_id(source);
+			if(!port)
+			{
+				port_broadcast(gateway->port, sk_buffer);
+				sk_buffer_destroy(sk_buffer);
+			}
 		}
 		else
 		{
